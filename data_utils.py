@@ -143,17 +143,38 @@ class MelCollate():
         ------
         batch: [text_normalized, mel_normalized]
         """
-        # Right zero-pad all one-hot text sequences to max input length
-        input_lengths, ids_sorted_decreasing = torch.sort(
-            torch.LongTensor([len(x[0]) for x in batch]),
-            dim=0, descending=True)
-        max_input_len = input_lengths[0]
+        
 
-        text_padded = torch.LongTensor(len(batch), max_input_len)
-        text_padded.zero_()
+       
+        '''
+        # Right zero-pad all one-hot text sequences to max input length
+
+        source_padded = torch.LongTensor(len(batch), max_input_len)
+        source_padded.zero_()
         for i in range(len(ids_sorted_decreasing)):
             text = batch[ids_sorted_decreasing[i]][0]
             text_padded[i, :text.size(0)] = text
+        '''
+
+        input_lengths, ids_sorted_decreasing = torch.sort(
+            torch.LongTensor([x[0].shape[1] for x in batch]),
+            dim=0, descending=True)
+
+        max_input_len = input_lengths[0]
+        #Right pad source mels
+        num_mels = batch[0][0].size(0) 
+        max_target_len = max([x[1].size(1) for x in batch])
+        if max_target_len % self.n_frames_per_step != 0:
+            max_target_len += self.n_frames_per_step - max_target_len % self.n_frames_per_step
+            assert max_target_len % self.n_frames_per_step == 0
+
+        source_mel_padded = torch.FloatTensor(len(batch), num_mels, max_target_len)
+        source_mel_padded.zero_()
+        input_lengths = torch.LongTensor(len(batch))
+        for i in range(len(ids_sorted_decreasing)):
+            mel = batch[ids_sorted_decreasing[i]][1]
+            source_mel_padded[i, :, :mel.size(1)] = mel
+            input_lengths[i] = mel.size(1)
         
         # Right zero-pad mel-spec
         num_mels = batch[0][1].size(0)
@@ -170,8 +191,8 @@ class MelCollate():
             mel = batch[ids_sorted_decreasing[i]][1]
             mel_padded[i, :, :mel.size(1)] = mel
             output_lengths[i] = mel.size(1)
-
-        return text_padded, input_lengths, mel_padded, output_lengths
+        #print(f"debug: {source_mel_padded.shape}|{input_lengths.shape}|{mel_padded.shape}|{output_lengths.shape}")
+        return source_mel_padded, input_lengths, mel_padded, output_lengths
 
 
 class TextMelCollate():

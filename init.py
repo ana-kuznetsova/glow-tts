@@ -38,7 +38,8 @@ def main():
       drop_last=True, collate_fn=collate_fn)
   
   for batch in train_loader:
-    print(batch)
+    x, x_len, y, y_len = batch
+    print(x)
     break
 
 '''
