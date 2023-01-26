@@ -7,7 +7,7 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 
-from data_utils import TextMelLoader, TextMelCollate
+from data_utils import Mel2MelLoader, MelCollate
 import models
 import commons
 import utils
@@ -31,12 +31,17 @@ def main():
 
   torch.manual_seed(hps.train.seed)
 
-  train_dataset = TextMelLoader(hps.data.training_files, hps.data)
-  collate_fn = TextMelCollate(1)
+  train_dataset = Mel2MelLoader (hps.data.training_files, hps.data)
+  collate_fn = MelCollate(1)
   train_loader = DataLoader(train_dataset, num_workers=8, shuffle=True,
       batch_size=hps.train.batch_size, pin_memory=True,
       drop_last=True, collate_fn=collate_fn)
+  
+  for batch in train_loader:
+    print(batch)
+    break
 
+'''
   generator = FlowGenerator_DDI(
       len(symbols) + getattr(hps.data, "add_blank", False), 
       out_channels=hps.data.n_mel_channels,
@@ -52,7 +57,7 @@ def main():
     break
 
   utils.save_checkpoint(generator, optimizer_g, hps.train.learning_rate, 0, os.path.join(hps.model_dir, "ddi_G.pth"))
-
+'''
                             
 if __name__ == "__main__":
   main()
